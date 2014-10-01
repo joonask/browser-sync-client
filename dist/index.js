@@ -99,6 +99,25 @@ exports.utils = {
      */
     getBody: function () {
         return document.getElementsByTagName("body")[0];
+    },
+    /**
+     * If element or it's parent has external link
+     * @param elem
+     * @returns boolean
+     */
+    isExternalLink: function (elem) {
+        var parent = elem;
+        var hostRegexp = new RegExp(window.location.host);
+        var isExternal = false;
+        while (parent !== null) {
+            if (parent.tagName === 'A' && !hostRegexp.test(parent.href) && /:\/\//.test(parent.href)) {
+                isExternal = true;
+                parent = null;
+            } else {
+                parent = parent.parentNode;
+            }
+        }
+        return isExternal;
     }
 };
 },{}],2:[function(require,module,exports){
@@ -339,6 +358,8 @@ exports.on = function (name, func) {
     }
 };
 },{}],5:[function(require,module,exports){
+var utils = require('./browser.utils.js').utils;
+
 exports._ElementCache = function () {
 
     var cache = {},
@@ -482,6 +503,12 @@ exports._EventManager = function (cache) {
                 if (data.disabled) return;
                 event = exports._fixEvent(event);
 
+                if (utils.isExternalLink(event.target)) {
+                  event.preventDefault();
+                  event.stopImmediatePropagation();
+                  return;
+                }
+
                 var handlers = data.handlers[event.type];
                 if (handlers) {
                     for (var n = 0; n < handlers.length; n++) {
@@ -618,7 +645,7 @@ exports.manager = eventManager;
 
 
 
-},{}],6:[function(require,module,exports){
+},{"./browser.utils.js":1}],6:[function(require,module,exports){
 "use strict";
 
 var socket    = require("./socket");
@@ -729,6 +756,10 @@ exports.browserEvent = function (bs) {
         if (exports.canEmitEvents) {
 
             var elem = event.target || event.srcElement;
+
+            if (bs.utils.isExternalLink(elem)) {
+                return;
+            }
 
             if (elem.type === "checkbox" || elem.type === "radio") {
                 bs.utils.forceChange(elem);
