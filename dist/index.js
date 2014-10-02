@@ -110,7 +110,7 @@ exports.utils = {
         var hostRegexp = new RegExp(window.location.host);
         var isExternal = false;
         while (parent !== null) {
-            if (parent.tagName === 'A' && !hostRegexp.test(parent.href) && /:\/\//.test(parent.href)) {
+            if (parent.tagName === "A" && !hostRegexp.test(parent.href) && /:\/\//.test(parent.href)) {
                 isExternal = true;
                 parent = null;
             } else {
