@@ -18,7 +18,8 @@ var __bs_stub__ = {
         getBody: function () {},
         getSingleElement: function () {},
         getElementData: function () {},
-        forceChange: function () {}
+        forceChange: function () {},
+        isExternalLink: function () {}
     },
     socket: {
         on: function(){},

@@ -167,6 +167,33 @@ describe("Generic Browser utils", function(){
         sinon.assert.calledOnce(blur);
         sinon.assert.calledOnce(focus);
     });
+
+    describe("isExternalLink(): ", function() {
+        it("should return true if link is external", function(){
+            var elem = {
+                tagName: "A",
+                href: "http://externalurl.com"
+            };
+            var isExternal = browserUtils.utils.isExternalLink(elem);
+            assert.equal(isExternal, true);
+        });
+
+        it("should return false if link is internal", function(){
+            var elem = {
+                tagName: "A",
+                href: "/internal/link",
+                parentNode: null
+            };
+            assert.equal(browserUtils.utils.isExternalLink(elem), false);
+            elem.href = "#";
+            assert.equal(browserUtils.utils.isExternalLink(elem), false);
+            elem.href = "relative/link";
+            assert.equal(browserUtils.utils.isExternalLink(elem), false);
+            elem.href = window.location.protocol + window.location.host + "/same/domain";
+            assert.equal(browserUtils.utils.isExternalLink(elem), false);
+        });
+    });
+
     describe("getDocument(): ", function () {
         window.__bs_utils__.getDocument();
     });
