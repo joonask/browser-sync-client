@@ -657,6 +657,7 @@ var emitter   = require("./emitter");
 var utils     = require("./browser.utils");
 var idleReturn = require("./idle-return");
 var syncLocation = require("./sync-location");
+var onBeforeUnload = require("./on-before-unload");
 
 /**
  * @constructor
@@ -711,6 +712,10 @@ exports.init = function (opts) {
         if (opts.syncLocation) {
             syncLocation.init(bs);
         }
+
+        if (opts.onBeforeUnload) {
+            onBeforeUnload.init(bs);
+        }
     }
 
 };
@@ -735,7 +740,7 @@ if (window.__karma__) {
     window.__bs_index__      = exports;
 }
 /**debug:end**/
-},{"./browser.utils":1,"./client-shims":2,"./code-sync":3,"./emitter":4,"./ghostmode":12,"./ghostmode.clicks":7,"./ghostmode.forms":9,"./ghostmode.forms.input":8,"./ghostmode.forms.submit":10,"./ghostmode.forms.toggles":11,"./ghostmode.location":13,"./ghostmode.scroll":14,"./idle-return":15,"./notify":16,"./socket":17,"./sync-location":18}],7:[function(require,module,exports){
+},{"./browser.utils":1,"./client-shims":2,"./code-sync":3,"./emitter":4,"./ghostmode":12,"./ghostmode.clicks":7,"./ghostmode.forms":9,"./ghostmode.forms.input":8,"./ghostmode.forms.submit":10,"./ghostmode.forms.toggles":11,"./ghostmode.location":13,"./ghostmode.scroll":14,"./idle-return":15,"./notify":16,"./on-before-unload":17,"./socket":18,"./sync-location":19}],7:[function(require,module,exports){
 "use strict";
 
 /**
@@ -1237,6 +1242,7 @@ exports.init = function (bs, opts) {
     }
 
     function returnHome() {
+        bs.emitter.emit("idle-return");
         window.location = opts.returnUrl;
     }
 
@@ -1370,6 +1376,58 @@ exports.flash = function (message, timeout) {
 "use strict";
 
 /**
+ * This is the plugin for showing confirmation popup when browser navigating to
+ * external URL
+ * @type {string}
+ */
+var eventManager = require("./events").manager;
+var confirmPopupEnabled = true;
+
+function disableConfirmPopup() {
+    confirmPopupEnabled = false;
+}
+
+function enableConfirmPopup() {
+    confirmPopupEnabled = true;
+}
+
+function handleClickEvent(bs) {
+    return function (event) {
+        var elem = event.target || event.srcElement;
+        if (bs.utils.isExternalLink(elem)) {
+            enableConfirmPopup();
+        } else {
+            disableConfirmPopup();
+        }
+    };
+}
+
+function confirmPopup() {
+    window.onbeforeunload = function(e) {
+        if (confirmPopupEnabled) {
+            return "";
+        } else {
+            enableConfirmPopup();
+            return void(0);
+        }
+    };
+}
+
+/**
+ * @param {BrowserSync} bs
+ */
+exports.init = function (bs) {
+    eventManager.addEvent(document.body, "click", handleClickEvent(bs));
+    bs.emitter.on("idle-return", disableConfirmPopup);
+    bs.socket.on("location", disableConfirmPopup);
+    bs.socket.on("sync-location", disableConfirmPopup);
+    confirmPopup();
+};
+
+},{"./events":5}],18:[function(require,module,exports){
+"use strict";
+
+/**
  * @type {{emit: emit, on: on}}
  */
 var BS = window.___browserSync___ || {};
@@ -1407,7 +1465,7 @@ exports.emit = function (name, data) {
 exports.on = function (name, func) {
     exports.socket.on(name, func);
 };
-},{}],18:[function(require,module,exports){
+},{}],19:[function(require,module,exports){
 "use strict";
 
 /**
