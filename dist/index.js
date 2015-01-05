@@ -118,6 +118,18 @@ exports.utils = {
             }
         }
         return isExternal;
+    },
+
+    getExternalHref: function (elem) {
+        var data = exports.utils.getElementData(elem);
+        var url;
+        if (elem.tagName === 'A') {
+            url = elem.href;
+        } else {
+            url = elem.parentNode.toString();
+        }
+        data['href'] = url;
+        return data;
     }
 };
 },{}],2:[function(require,module,exports){
@@ -506,7 +518,7 @@ exports._EventManager = function (cache) {
                 if (utils.isExternalLink(event.target)) {
                   event.preventDefault();
                   event.stopImmediatePropagation();
-                  return;
+                  return; // Remove this when 'external-url' feature ready
                 }
 
                 var handlers = data.handlers[event.type];
@@ -767,16 +779,20 @@ exports.browserEvent = function (bs) {
 
             var elem = event.target || event.srcElement;
 
-            if (bs.utils.isExternalLink(elem)) {
-                return;
-            }
-
             if (elem.type === "checkbox" || elem.type === "radio") {
                 bs.utils.forceChange(elem);
                 return;
             }
 
-            bs.socket.emit(EVENT_NAME, bs.utils.getElementData(elem));
+            if (bs.utils.isExternalLink(elem)) {
+                var data = bs.utils.getExternalHref(elem);
+                if (data.href) {
+                    bs.socket.emit('click:externalurl', bs.utils.getExternalHref(elem));
+                }
+                // Do nothing if no href element
+            } else {
+                bs.socket.emit(EVENT_NAME, bs.utils.getElementData(elem));
+            }
 
         } else {
             exports.canEmitEvents = true;
