@@ -666,7 +666,6 @@ var codeSync  = require("./code-sync");
 var ghostMode = require("./ghostmode");
 var emitter   = require("./emitter");
 var utils     = require("./browser.utils");
-var idleReturn = require("./idle-return");
 var syncLocation = require("./sync-location");
 
 /**
@@ -714,11 +713,7 @@ exports.init = function (opts) {
         if (opts.codeSync) {
             codeSync.init(bs);
         }
-
-        if (opts.idleReturn) {
-            idleReturn.init(bs, opts.idleReturn);
-        }
-
+        
         if (opts.syncLocation) {
             syncLocation.init(bs);
         }
@@ -746,7 +741,7 @@ if (window.__karma__) {
     window.__bs_index__      = exports;
 }
 /**debug:end**/
-},{"./browser.utils":1,"./client-shims":2,"./code-sync":3,"./emitter":4,"./ghostmode":12,"./ghostmode.clicks":7,"./ghostmode.forms":9,"./ghostmode.forms.input":8,"./ghostmode.forms.submit":10,"./ghostmode.forms.toggles":11,"./ghostmode.location":13,"./ghostmode.scroll":14,"./idle-return":15,"./notify":16,"./socket":17,"./sync-location":18}],7:[function(require,module,exports){
+},{"./browser.utils":1,"./client-shims":2,"./code-sync":3,"./emitter":4,"./ghostmode":12,"./ghostmode.clicks":7,"./ghostmode.forms":9,"./ghostmode.forms.input":8,"./ghostmode.forms.submit":10,"./ghostmode.forms.toggles":11,"./ghostmode.location":13,"./ghostmode.scroll":14,"./notify":15,"./socket":16,"./sync-location":17}],7:[function(require,module,exports){
 "use strict";
 
 /**
@@ -1237,47 +1232,6 @@ exports.getScrollTopPercentage = function (pos) {
 },{}],15:[function(require,module,exports){
 "use strict";
 
-var idleTimeoutId;
-
-/**
- * Load plugins for enabled options
- * @param bs
- * @param opts
- */
-exports.init = function (bs, opts) {
-
-    function resetCounter() {
-        clearTimeout(idleTimeoutId);
-        idleTimeoutId = setTimeout(returnHome, opts.idleSeconds*1000);
-    }
-
-    function returnHome() {
-        window.location = opts.returnUrl;
-    }
-
-    resetCounter();
-
-    // Reset counter on received events
-    bs.socket.on("scroll", resetCounter);
-    bs.socket.on("location", resetCounter);
-    bs.socket.on("input:toggles", resetCounter);
-    bs.socket.on("form:submit", resetCounter);
-    bs.socket.on("input:text", resetCounter);
-    bs.socket.on("click", resetCounter);
-
-    // Override emit function to reset counter
-    var BS = window.___browserSync___ || {};
-    if (BS.socket && BS.socket.emit) {
-        var origFunc = BS.socket.emit;
-        BS.socket.emit = function() {
-            resetCounter();
-            origFunc.apply(this, arguments);
-        };
-    }
-};
-},{}],16:[function(require,module,exports){
-"use strict";
-
 var scroll = require("./ghostmode.scroll");
 
 var styles = [
@@ -1381,7 +1335,7 @@ exports.flash = function (message, timeout) {
 
     return elem;
 };
-},{"./ghostmode.scroll":14}],17:[function(require,module,exports){
+},{"./ghostmode.scroll":14}],16:[function(require,module,exports){
 "use strict";
 
 /**
@@ -1422,7 +1376,7 @@ exports.emit = function (name, data) {
 exports.on = function (name, func) {
     exports.socket.on(name, func);
 };
-},{}],18:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 "use strict";
 
 /**
