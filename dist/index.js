@@ -666,6 +666,7 @@ var codeSync  = require("./code-sync");
 var ghostMode = require("./ghostmode");
 var emitter   = require("./emitter");
 var utils     = require("./browser.utils");
+var socketCheck = require("./socket-check");
 var syncLocation = require("./sync-location");
 
 /**
@@ -713,6 +714,10 @@ exports.init = function (opts) {
         if (opts.codeSync) {
             codeSync.init(bs);
         }
+
+        if (opts.socketCheck) {
+            socketCheck.init(bs, opts.socketCheck);
+        }
         
         if (opts.syncLocation) {
             syncLocation.init(bs);
@@ -741,7 +746,7 @@ if (window.__karma__) {
     window.__bs_index__      = exports;
 }
 /**debug:end**/
-},{"./browser.utils":1,"./client-shims":2,"./code-sync":3,"./emitter":4,"./ghostmode":12,"./ghostmode.clicks":7,"./ghostmode.forms":9,"./ghostmode.forms.input":8,"./ghostmode.forms.submit":10,"./ghostmode.forms.toggles":11,"./ghostmode.location":13,"./ghostmode.scroll":14,"./notify":15,"./socket":16,"./sync-location":17}],7:[function(require,module,exports){
+},{"./browser.utils":1,"./client-shims":2,"./code-sync":3,"./emitter":4,"./ghostmode":12,"./ghostmode.clicks":7,"./ghostmode.forms":9,"./ghostmode.forms.input":8,"./ghostmode.forms.submit":10,"./ghostmode.forms.toggles":11,"./ghostmode.location":13,"./ghostmode.scroll":14,"./notify":15,"./socket":17,"./socket-check":16,"./sync-location":18}],7:[function(require,module,exports){
 "use strict";
 
 /**
@@ -1338,6 +1343,22 @@ exports.flash = function (message, timeout) {
 },{"./ghostmode.scroll":14}],16:[function(require,module,exports){
 "use strict";
 
+var check;
+
+exports.init = function(bs, options) {
+  if (options && options.checkIntervalSeconds && options.returnUrl) {
+    check = setInterval(function() {
+      var socket = bs.socket.socket;
+      if (!socket || socket.connected === false || socket.disconnected === true) {
+        console.error('No socket connection to Browser Sync, returning home.');
+        window.location = options.returnUrl;
+      }
+    }, options.checkIntervalSeconds*1000);
+  }
+};
+},{}],17:[function(require,module,exports){
+"use strict";
+
 /**
  * @type {{emit: emit, on: on}}
  */
@@ -1376,7 +1397,7 @@ exports.emit = function (name, data) {
 exports.on = function (name, func) {
     exports.socket.on(name, func);
 };
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 "use strict";
 
 /**
