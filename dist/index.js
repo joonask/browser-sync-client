@@ -130,8 +130,17 @@ exports.utils = {
         }
         data['href'] = url;
         return data;
+    },
+
+    getUUID: function () {
+      function _p8(s) {
+        var p = (Math.random().toString(16)+"000000000").substr(2,8);
+        return s ? "-" + p.substr(0,4) + "-" + p.substr(4,4) : p ;
+      }
+      return _p8() + _p8(true) + _p8(true) + _p8();
     }
 };
+
 },{}],2:[function(require,module,exports){
 if (!("indexOf" in Array.prototype)) {
 
@@ -1343,19 +1352,67 @@ exports.flash = function (message, timeout) {
 },{"./ghostmode.scroll":14}],16:[function(require,module,exports){
 "use strict";
 
-var check;
+var BS, check, checkTimer, ping, pong, pingPongTimer, uuid, counter;
 
 exports.init = function(bs, options) {
-  if (options && options.checkIntervalSeconds && options.returnUrl) {
+  if (options) {
+    BS = window.___browserSync___ || {};
+  }
+
+  if (options.checkIntervalSeconds && options.returnUrl) {
+    checkTimer = options.checkIntervalSeconds*1000;
     check = setInterval(function() {
       var socket = bs.socket.socket;
       if (!socket || socket.connected === false || socket.disconnected === true) {
         console.error('No socket connection to Browser Sync, returning home.');
         window.location = options.returnUrl;
       }
-    }, options.checkIntervalSeconds*1000);
+    }, checkTimer);
+  }
+
+  if (options.pingPong && options.pingPongIntervalSeconds) {
+    uuid = bs.utils.getUUID();
+    pingPongTimer = options.pingPongIntervalSeconds*1000;
+    counter = 0;
+
+    BS.socket.on('socket-check-pong', function(data) {
+      if (!data) {
+        return;
+      }
+      if (data.uuid === uuid && counter > data.counter) {
+        clearTimeout(ping);
+        ping = undefined;
+        console.log('Pong!');
+      } else {
+        console.error('UUIDs did not match or counter is too large.');
+      }
+    });
+
+    pong = setInterval(function() {
+      if (!ping) {
+        sendPing();
+      }
+    }, pingPongTimer);
+  }
+
+  function sendPing() {
+    setPingTimer();
+    BS.socket.emit('socket-check-ping', {
+      uuid: uuid,
+      counter: counter
+    });
+    counter++;
+    console.log('Ping!');
+  }
+
+  function setPingTimer() {
+    ping = setTimeout(function() {
+      console.error('Ping-Pong failed, returning home.');
+      window.location = options.returnUrl;
+    }, 5000);
   }
 };
+
 },{}],17:[function(require,module,exports){
 "use strict";
 
