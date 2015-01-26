@@ -693,6 +693,7 @@ var BrowserSync = function () {
  * @returns {boolean}
  */
 BrowserSync.prototype.canSync = function (data) {
+    console.log("BrowserSync.prototype.canSync()", data.url === window.location.pathname);
     return data.url === window.location.pathname;
 };
 
@@ -703,6 +704,7 @@ var bs;
  */
 exports.init = function (opts) {
 
+    console.log("init socket");
     var BS = window.___browserSync___ || {};
     if (!BS.client) {
 
@@ -731,6 +733,8 @@ exports.init = function (opts) {
         if (opts.syncLocation) {
             syncLocation.init(bs);
         }
+    } else {
+      console.log("init socket failed");
     }
 
 };
@@ -771,6 +775,7 @@ exports.canEmitEvents = true;
  */
 exports.init = function (bs, eventManager) {
     eventManager.addEvent(document.body, EVENT_NAME, exports.browserEvent(bs));
+    console.log("clicks event init");
     bs.socket.on(EVENT_NAME, exports.socketEvent(bs, eventManager));
 };
 
@@ -783,6 +788,7 @@ exports.browserEvent = function (bs) {
 
     return function (event) {
 
+      console.log("trigger click");
         if (exports.canEmitEvents) {
 
             var elem = event.target || event.srcElement;
@@ -816,8 +822,9 @@ exports.browserEvent = function (bs) {
 exports.socketEvent = function (bs, eventManager) {
 
     return function (data) {
-
+        console.log("socketEvent", data);
         if (bs.canSync(data)) {
+            console.log("bs.canSync true");
 
             var elem = bs.utils.getSingleElement(data.tagName, data.index);
 
@@ -825,6 +832,8 @@ exports.socketEvent = function (bs, eventManager) {
                 exports.canEmitEvents = false;
                 eventManager.triggerClick(elem);
             }
+        } else {
+          console.log("bs.canSync false");
         }
     };
 };
@@ -1409,7 +1418,7 @@ exports.init = function(bs, options) {
     ping = setTimeout(function() {
       console.error('Ping-Pong failed, returning home.');
       window.location = options.returnUrl;
-    }, 5000);
+    }, 10000);
   }
 };
 
@@ -1438,6 +1447,7 @@ exports.getPath = function () {
  * @param data
  */
 exports.emit = function (name, data) {
+    console.log("emit: " + name, data);
     var socket = exports.socket;
     if (socket && socket.emit) {
         // send relative path of where the event is sent
